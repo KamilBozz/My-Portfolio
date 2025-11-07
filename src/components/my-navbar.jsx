@@ -17,7 +17,7 @@ export default function MyNavbar() {
     <NavigationMenu viewport={false}>
     <NavigationMenuList>
         <NavigationMenuItem>
-            <NavigationMenuLink>
+            <NavigationMenuLink asChild>
             <Link href="/">Home</Link>
             </NavigationMenuLink>
         </NavigationMenuItem>
@@ -29,12 +29,12 @@ export default function MyNavbar() {
         </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem>
-        <NavigationMenuLink>
+        <NavigationMenuLink asChild>
             <Link href="/projects">Projects</Link>
         </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-        <NavigationMenuLink>
+        <NavigationMenuLink asChild>
             <Link href="/login">Login</Link>
         </NavigationMenuLink>
         </NavigationMenuItem>

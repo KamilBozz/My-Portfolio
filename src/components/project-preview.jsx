@@ -4,43 +4,35 @@ import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 
 
-const projects = [
-    {
-      title: "Project One",
-      desc: "Short blurb.",
-      img: "https://placehold.co/300.png",
-      link: "#"
-      },
-    {
-        title: "Project Two",
-        desc: "Short blurb.",
-        img: "https://placehold.co/300.png",
-        link: "#"
-        },
-        
-    {
-        title: "Project Three",
-        desc: "Short blurb.",
-        img: "https://placehold.co/300.png",
-        link: "#"
-        },  
-  ];
-  
+import { Button } from "@/components/ui/button"
 
-export default function ProjectPreview({ count = 3 }) {
+export default async function ProjectPreview({ count = 3 }) {
+
+    const projects = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`)
+    .then(res => res.json())
+    .then(data => data.projects)
+    .catch(error => {
+        console.error("Error fetching projects:", error);
+        return [];
+    });
+
     return(
         <div className="flex justify-center gap-4 mt-4">
             <Skeleton/>
             {projects.slice(0, count).map((project) => (
-                <Card key={project.title}>
-                    <CardHeader>
+                <Card key={project.title} className="w-full sm:w-80 max-w-sm flex flex-col">
                         <CardTitle>{project.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Image src="/project.jpg" alt="project" width={300} height={300} />
+                    <CardContent className="p-0">
+                        {project.img? 
+                            <Image src={project.img} alt={project.title} width={300} height={300} />
+                            : <Skeleton className="w-full h-full" />
+                        }
                     </CardContent>
-                    <CardFooter>
-                        <Link href={project.link}>View Project</Link>
+                    <CardHeader className="pl-0">
+                        <CardDescription className="line-clamp-3">{project.desc}</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="pl-0">
+                        <Button variant="outline"><Link href={project.link}>View Project</Link></Button>
                     </CardFooter>
                 </Card>
             ))}

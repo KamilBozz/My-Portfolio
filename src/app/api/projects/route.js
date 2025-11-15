@@ -5,20 +5,20 @@ export async function GET() {
           title: "Project One",
           desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
           img: "/project.jpg",
-          link: "#"
+          link: "https://www.google.com"
           },
         {
             title: "Project Two",
             desc: "Short blurb.",
             img: "/project.jpg",
-            link: "#"
+            link: "https://www.google.com"
             },
             
         {
             title: "Project Three",
             desc: "Short blurb.",
             img: "https://placehold.co/300.png",
-            link: "#"
+            link: "https://www.google.com"
             },  
       ];
 

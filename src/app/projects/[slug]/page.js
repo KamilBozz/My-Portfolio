@@ -1,8 +1,8 @@
 import { createSlug } from "@/lib/utils"
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { notFound } from "next/navigation"
 
 export default async function ProjectDetailPage({ params }) {
     const { slug } = await params
@@ -15,6 +15,10 @@ export default async function ProjectDetailPage({ params }) {
     })
 
     const project = projects.find(project => createSlug(project.title) === slug)
+
+    if(!project) {
+        notFound()
+    }
 
     return(
         <div className="flex justify-center items-center min-h-screen py-8">

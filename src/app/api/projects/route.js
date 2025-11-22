@@ -1,26 +1,7 @@
 // GET /api/projects
+import { getProjects } from "@/lib/db";
 export async function GET() {
-    const projects = [
-        {
-          title: "Project One",
-          desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-          img: "/project.jpg",
-          link: "https://www.google.com"
-          },
-        {
-            title: "Project Two",
-            desc: "Short blurb.",
-            img: "/project.jpg",
-            link: "https://www.google.com"
-            },
-            
-        {
-            title: "Project Three",
-            desc: "Short blurb.",
-            img: "https://placehold.co/300.png",
-            link: "https://www.google.com"
-            },  
-      ];
+    const projects = await getProjects();
 
     return Response.json({ projects });
   }

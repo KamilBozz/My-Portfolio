@@ -1,79 +1,92 @@
-// Front-end endpoint for creating a new project
-
 "use client";
 
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { useState, useTransition } from "react"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-// Import rest of the components needed from shadcn/ui
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useState, useTransition } from "react";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { createSlug } from "@/lib/utils";
 
-const newProjectSchema = z.object({
-    title: z.string().min(2, { message: "Your title is too short", }).max(200),
-    description: z.string().min(2, { message: "Your description is too short", }).max(200),
+const editProjectSchema = z.object({
+    title: z.string().min(2, { message: "Your title is too short" }).max(200),
+    description: z.string().min(2, { message: "Your description is too short" }).max(200),
     img: z.string().url({ message: "Please enter a valid image URL" }),
     link: z.string().url({ message: "Please enter a valid link" }),
     keywords: z.array(z.string()).optional(),
-})
+});
 
-export default function NewPage() {
-
-    const [draftKeyword, setDraftKeyword] = useState("")
+export default function EditProjectForm({ project, uuid }) {
+    const [draftKeyword, setDraftKeyword] = useState("");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    
     const form = useForm({
-        resolver: zodResolver(newProjectSchema),
+        resolver: zodResolver(editProjectSchema),
         defaultValues: {
-            title: "Write your project title here...",
-            description: "Write your project description here...",
-            img: "https://placehold.co/300.png",
-            link: "https://your-project-link.com",
-            keywords: [],
+            title: project.title || "",
+            description: project.description || "",
+            img: project.img || "",
+            link: project.link || "",
+            keywords: project.keywords || [],
         },
-    })
+    });
 
     function onSubmit(values) {
         startTransition(async () => {
-            const formData = new FormData()
-            formData.append('title', values.title)
-            formData.append('description', values.description)
-            formData.append('img', values.img)
-            formData.append('link', values.link)
-            formData.append('keywords', JSON.stringify(values.keywords || []))
-
             try {
-                const response = await fetch('/api/projects/new', {
-                    method: 'POST',
-                    body: formData,
+                const response = await fetch(`/api/projects/${uuid}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(values),
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    toast.error(data.message || "Failed to create project");
+                    toast.error(data.message || "Failed to update project");
                 } else {
-                    toast.success("Project created successfully");
-                    router.refresh();
-                    router.push("/projects");
+                    toast.success("Project updated successfully");
+                    // Redirect to the project detail page using the slug
+                    const slug = createSlug(values.title);
+                    router.push(`/projects/${slug}`);
                 }
             } catch (error) {
-                console.error("Error creating project:", error);
-                toast.error("Failed to create project. Please try again.");
+                console.error("Error updating project:", error);
+                toast.error("Failed to update project. Please try again.");
             }
         });
     }
 
+    const handleDelete = async () => {
+        if (!window.confirm("Are you sure you want to delete this project?")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/projects/${uuid}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                toast.error("Failed to delete project");
+            } else {
+                toast.success("Project deleted successfully");
+                router.push("/projects");
+            }
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            toast.error("Failed to delete project");
+        }
+    };
+
     return (
-        <div className="flex justify-center items-center min-h-screen py-8">
-            <div className="w-full max-w-2xl px-4">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
                 <FormField
                     control={form.control}
                     name="title"
@@ -209,16 +222,24 @@ export default function NewPage() {
                         );
                     }}
                 />
-                <Button 
-                    type="submit" 
-                    className="mt-2" 
-                    disabled={form.formState.isSubmitting || isPending}
-                >
-                    {(form.formState.isSubmitting || isPending) ? "Creating..." : "Create Project"}
-                </Button>
-                    </form>
-                </Form>
-            </div>
-        </div>
-    )
+                <div className="flex gap-2 mt-4">
+                    <Button 
+                        type="submit" 
+                        disabled={form.formState.isSubmitting || isPending}
+                    >
+                        {(form.formState.isSubmitting || isPending) ? "Updating..." : "Update Project"}
+                    </Button>
+                    <Button 
+                        type="button"
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={isPending}
+                    >
+                        Delete Project
+                    </Button>
+                </div>
+            </form>
+        </Form>
+    );
 }
+

@@ -9,8 +9,12 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import LogoutButton from "./logout-button";
+import LoginButton from "./login-button";
 
 export default function MyNavbar() {
+  const { user } = useUser();
   return (
     <div className="flex justify-center py-3 font-mono sticky top">
       <NavigationMenu viewport={false}>
@@ -34,7 +38,17 @@ export default function MyNavbar() {
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
-              <Link href="/login">Login</Link>
+              <Link href="/projects/new">+</Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              {user ? <LogoutButton /> : <LoginButton />}
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link href="/dashboard">{user ? user.name || "Dashboard" : "Login"}</Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>

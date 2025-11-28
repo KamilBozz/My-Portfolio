@@ -2,19 +2,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import Image from "next/image"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
-
-
+import { fetchProjects } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 
 export default async function ProjectPreview({ count = 3 }) {
-
-    const projects = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`)
-    .then(res => res.json())
-    .then(data => data.projects)
-    .catch(error => {
+    let projects = [];
+    
+    try {
+        projects = await fetchProjects();
+    } catch (error) {
         console.error("Error fetching projects:", error);
-        return [];
-    });
+        projects = [];
+    }
 
     return(
         <div className="flex justify-center gap-4 mt-4">
@@ -29,7 +28,7 @@ export default async function ProjectPreview({ count = 3 }) {
                         }
                     </CardContent>
                     <CardHeader className="pl-0">
-                        <CardDescription className="line-clamp-3">{project.desc}</CardDescription>
+                        <CardDescription className="line-clamp-3">{project.description}</CardDescription>
                     </CardHeader>
                     <CardFooter className="pl-0">
                         <Button variant="outline"><Link href={project.link}>View Project</Link></Button>

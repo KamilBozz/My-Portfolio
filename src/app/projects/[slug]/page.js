@@ -3,16 +3,18 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { notFound } from "next/navigation"
+import { fetchProjects } from "@/lib/db"
 
 export default async function ProjectDetailPage({ params }) {
     const { slug } = await params
-    const projects = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`)
-    .then(res => res.json())
-    .then(data => data.projects)
-    .catch(error => {
-        console.error("Error fetching project:", error);
-        return null;
-    })
+    let projects = [];
+    
+    try {
+        projects = await fetchProjects();
+    } catch (error) {
+        console.error("Error fetching projects:", error);
+        projects = [];
+    }
 
     const project = projects.find(project => createSlug(project.title) === slug)
 
@@ -26,7 +28,7 @@ export default async function ProjectDetailPage({ params }) {
                 <div className="flex flex-col justify-center items-center gap-6">
                     <h1 className="text-4xl font-bold text-center">{project.title}</h1>
                     <Image src={project.img} alt={project.title} width={300} height={300} />
-                    <div className="text-center">{project.desc}</div>
+                    <div className="text-center">{project.description}</div>
                     <Button variant="outline">
                         <Link href={project.link}>View Project</Link>
                     </Button>

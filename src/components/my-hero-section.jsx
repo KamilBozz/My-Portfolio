@@ -6,7 +6,14 @@ import { getHero, HERO_PLACEHOLDER_AVATAR, defaultHeroContent } from "@/lib/db";
 import Image from "next/image";
 
 export default async function MyHeroSection() {
-  const hero = await getHero();
+  let hero = null;
+  
+  try {
+    hero = await getHero();
+  } catch (error) {
+    console.error("Error fetching hero:", error);
+    // Use defaults on error
+  }
 
   // Use DB values when present, otherwise use defaults
   const avatar = hero?.avatar && hero.avatar.trim() && hero.avatar !== HERO_PLACEHOLDER_AVATAR

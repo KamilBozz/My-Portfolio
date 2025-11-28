@@ -252,3 +252,149 @@ async function ensureProjectsTable() {
   }
   
   export { fetchProjects as getProjects };
+
+// Hero helpers
+export const HERO_PLACEHOLDER_AVATAR = "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
+
+export const defaultHeroContent = {
+  avatar: HERO_PLACEHOLDER_AVATAR,
+  fullName: "...",
+  shortDescription: "...",
+  longDescription: "...",
+};
+
+async function ensureHeroTable() {
+  await db`
+    CREATE TABLE IF NOT EXISTS hero (
+      id uuid PRIMARY KEY,
+      avatar text NOT NULL DEFAULT '',
+      full_name text NOT NULL,
+      short_description text NOT NULL CHECK (char_length(short_description) <= 120),
+      long_description text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+
+  const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM hero`;
+  if (Number(count) === 0) {
+    await seedHeroTable();
+  }
+}
+
+async function seedHeroTable() {
+  const id = randomUUID();
+  await db`
+    INSERT INTO hero (id, avatar, full_name, short_description, long_description)
+    VALUES (
+      ${id}::uuid,
+      ${defaultHeroContent.avatar},
+      ${defaultHeroContent.fullName},
+      ${defaultHeroContent.shortDescription},
+      ${defaultHeroContent.longDescription}
+    )
+    ON CONFLICT (id) DO NOTHING
+  `;
+}
+
+function mapHeroRow(row) {
+  return {
+    id: row.id,
+    avatar: row.avatar || HERO_PLACEHOLDER_AVATAR,
+    fullName: row.full_name || defaultHeroContent.fullName,
+    shortDescription: row.short_description || defaultHeroContent.shortDescription,
+    longDescription: row.long_description || defaultHeroContent.longDescription,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export async function getHero() {
+  await ensureHeroTable();
+  const [row] = await db`
+    SELECT
+      id,
+      avatar,
+      full_name,
+      short_description,
+      long_description,
+      created_at AS "createdAt",
+      updated_at AS "updatedAt"
+    FROM hero
+    ORDER BY created_at ASC
+    LIMIT 1
+  `;
+
+  return row ? mapHeroRow(row) : null;
+}
+
+export async function upsertHero(updates = {}) {
+  await ensureHeroTable();
+
+  const current = await getHero();
+
+  // Merge defaults → current → updates
+  const merged = {
+    avatar: updates.avatar !== undefined ? updates.avatar : (current?.avatar || defaultHeroContent.avatar),
+    fullName: updates.fullName !== undefined ? updates.fullName : (current?.fullName || defaultHeroContent.fullName),
+    shortDescription: updates.shortDescription !== undefined 
+      ? updates.shortDescription.slice(0, 120) 
+      : (current?.shortDescription || defaultHeroContent.shortDescription),
+    longDescription: updates.longDescription !== undefined 
+      ? updates.longDescription 
+      : (current?.longDescription || defaultHeroContent.longDescription),
+  };
+
+  // Normalize: trim strings, ensure avatar is not empty
+  const normalized = {
+    avatar: (merged.avatar || '').trim() || HERO_PLACEHOLDER_AVATAR,
+    fullName: (merged.fullName || '').trim() || defaultHeroContent.fullName,
+    shortDescription: (merged.shortDescription || '').trim().slice(0, 120) || defaultHeroContent.shortDescription,
+    longDescription: (merged.longDescription || '').trim() || defaultHeroContent.longDescription,
+  };
+
+  if (current) {
+    // UPDATE existing row
+    const [row] = await db`
+      UPDATE hero
+      SET
+        avatar = ${normalized.avatar},
+        full_name = ${normalized.fullName},
+        short_description = ${normalized.shortDescription},
+        long_description = ${normalized.longDescription},
+        updated_at = now()
+      WHERE id = ${current.id}::uuid
+      RETURNING
+        id,
+        avatar,
+        full_name,
+        short_description,
+        long_description,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+    `;
+    return mapHeroRow(row);
+  } else {
+    // INSERT new row
+    const id = randomUUID();
+    const [row] = await db`
+      INSERT INTO hero (id, avatar, full_name, short_description, long_description)
+      VALUES (
+        ${id}::uuid,
+        ${normalized.avatar},
+        ${normalized.fullName},
+        ${normalized.shortDescription},
+        ${normalized.longDescription}
+      )
+      RETURNING
+        id,
+        avatar,
+        full_name,
+        short_description,
+        long_description,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+    `;
+    return mapHeroRow(row);
+  }
+}

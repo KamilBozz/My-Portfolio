@@ -10,14 +10,14 @@
 //   NavigationMenuViewport,
 // } from "@/components/ui/navigation-menu"
 // import Link from "next/link";
-import MyHero from "@/components/my-hero";
+import MyHeroSection from "@/components/my-hero-section";
 import ProjectPreview from "@/components/project-preview";
 import ContactForm from "@/components/contact-form";
 
 export default function Home() {
   return (
     <div>
-      <MyHero />
+      <MyHeroSection />
       <ProjectPreview count={3} />
       <ContactForm />
     </div>

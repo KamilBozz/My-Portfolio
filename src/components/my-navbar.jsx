@@ -36,21 +36,25 @@ export default function MyNavbar() {
               <Link href="/projects">Projects</Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink asChild>
-              <Link href="/projects/new">+</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
+          {user && (
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild>
+                <Link href="/projects/new">+</Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          )}
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
               {user ? <LogoutButton /> : <LoginButton />}
             </NavigationMenuLink>
           </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink asChild>
-              <Link href="/dashboard">{user ? user.name || "Dashboard" : "Login"}</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
+          {user && (
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild>
+                <Link href="/dashboard">{user.name || user.email || "Dashboard"}</Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          )}
         </NavigationMenuList>
       </NavigationMenu>
     </div>

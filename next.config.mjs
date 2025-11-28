@@ -10,6 +10,10 @@ const nextConfig = {
       },
     ],
   },
+  serverExternalPackages: ['@auth0/nextjs-auth0'],
+  experimental: {
+    serverComponentsExternalPackages: ['@auth0/nextjs-auth0'],
+  },
 };
 
 export default nextConfig;

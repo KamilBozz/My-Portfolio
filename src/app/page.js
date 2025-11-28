@@ -14,6 +14,8 @@ import MyHeroSection from "@/components/my-hero-section";
 import ProjectPreview from "@/components/project-preview";
 import ContactForm from "@/components/contact-form";
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   return (
     <div>

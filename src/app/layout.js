@@ -20,14 +20,16 @@ export const metadata = {
   description: "Portfolio of Kamil Bozkurt - Full Stack Developer",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MyNavbar />
         <Auth0Provider>
+          <MyNavbar />
         {children}
         </Auth0Provider>
         <Toaster />

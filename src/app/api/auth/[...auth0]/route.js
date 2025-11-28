@@ -1,4 +1,6 @@
-import { handleAuth } from '@auth0/nextjs-auth0';
+import { auth0 } from '@/lib/auth0';
 
-export const GET = handleAuth();
+export async function GET(request) {
+  return auth0.middleware(request);
+}
 

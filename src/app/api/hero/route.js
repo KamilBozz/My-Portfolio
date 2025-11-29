@@ -8,6 +8,9 @@ import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const heroSchema = z.object({
   avatar: z.string().trim().min(1).refine((v) => v.startsWith("data:"), "Avatar must be a data URL"),
   fullName: z.string().trim().min(2).max(200),
@@ -30,8 +33,8 @@ export async function GET() {
 
 export const PUT = auth0.withApiAuthRequired(async (request) => {
   try {
-    // withApiAuthRequired already ensures user is authenticated
-    // Read formData directly
+    // withApiAuthRequired already ensures authentication
+    // Read formData - getSession only reads headers/cookies, not body
     const formData = await request.formData();
     const avatarFile = formData.get("avatarFile");
     const avatarFromForm = formData.get("avatar");
@@ -54,6 +57,13 @@ export const PUT = auth0.withApiAuthRequired(async (request) => {
         message: "Validation error", 
         errors: error.errors 
       }, { status: 400 });
+    }
+    
+    // Handle authentication errors
+    if (error.message?.includes("Unauthorized") || error.message?.includes("authentication")) {
+      return NextResponse.json({ 
+        message: "You must be logged in to edit the hero section" 
+      }, { status: 401 });
     }
     
     return NextResponse.json({ 

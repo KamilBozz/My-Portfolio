@@ -30,12 +30,8 @@ export async function GET() {
 
 export const PUT = auth0.withApiAuthRequired(async (request) => {
   try {
-    const session = await auth0.getSession(request);
-
-    if (!session?.user?.email) {
-      return NextResponse.json({ message: "You must be logged in to edit the hero section" }, { status: 401 });
-    }
-
+    // withApiAuthRequired already ensures user is authenticated
+    // Read formData directly
     const formData = await request.formData();
     const avatarFile = formData.get("avatarFile");
     const avatarFromForm = formData.get("avatar");

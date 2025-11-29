@@ -97,22 +97,27 @@ async function ensureProjectsTable() {
   }
   
   export async function fetchProjects() {
-    await ensureProjectsTable();
-    const rows = await db`
-      SELECT
-        id,
-        title,
-        description,
-        img,
-        link,
-        keywords,
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM projects
-      ORDER BY created_at DESC
-    `;
-  
-    return rows.map(mapRow);
+    try {
+      await ensureProjectsTable();
+      const rows = await db`
+        SELECT
+          id,
+          title,
+          description,
+          img,
+          link,
+          keywords,
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+        FROM projects
+        ORDER BY created_at DESC
+      `;
+    
+      return rows.map(mapRow);
+    } catch (error) {
+      console.error("Database error in fetchProjects:", error);
+      throw error;
+    }
   }
   
   export async function getProjectById(id) {
@@ -310,22 +315,27 @@ function mapHeroRow(row) {
 }
 
 export async function getHero() {
-  await ensureHeroTable();
-  const [row] = await db`
-    SELECT
-      id,
-      avatar,
-      full_name,
-      short_description,
-      long_description,
-      created_at AS "createdAt",
-      updated_at AS "updatedAt"
-    FROM hero
-    ORDER BY created_at ASC
-    LIMIT 1
-  `;
+  try {
+    await ensureHeroTable();
+    const [row] = await db`
+      SELECT
+        id,
+        avatar,
+        full_name,
+        short_description,
+        long_description,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM hero
+      ORDER BY created_at ASC
+      LIMIT 1
+    `;
 
-  return row ? mapHeroRow(row) : null;
+    return row ? mapHeroRow(row) : null;
+  } catch (error) {
+    console.error("Database error in getHero:", error);
+    throw error;
+  }
 }
 
 export async function upsertHero(updates = {}) {

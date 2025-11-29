@@ -16,47 +16,79 @@ const heroSchema = z.object({
 });
 
 export async function GET() {
-  const hero = await getHero();
-  return NextResponse.json({ data: hero });
+  try {
+    const hero = await getHero();
+    return NextResponse.json({ data: hero });
+  } catch (error) {
+    console.error("Error fetching hero:", error);
+    return NextResponse.json({ 
+      data: null,
+      error: "Failed to fetch hero data" 
+    }, { status: 500 });
+  }
 }
 
 export const PUT = auth0.withApiAuthRequired(async (request) => {
-  const session = await auth0.getSession(request);
+  try {
+    const session = await auth0.getSession(request);
 
-  if (!session?.user?.email) {
-    return NextResponse.json({ message: "You must be logged in to edit the hero section" }, { status: 401 });
+    if (!session?.user?.email) {
+      return NextResponse.json({ message: "You must be logged in to edit the hero section" }, { status: 401 });
+    }
+
+    const formData = await request.formData();
+    const avatarFile = formData.get("avatarFile");
+    const avatarFromForm = formData.get("avatar");
+    const avatarDataUrl = await toDataUrl(avatarFile, avatarFromForm);
+
+    const payload = heroSchema.parse({
+      avatar: avatarDataUrl ?? "",
+      fullName: formData.get("fullName") ?? "",
+      shortDescription: formData.get("shortDescription") ?? "",
+      longDescription: formData.get("longDescription") ?? "",
+    });
+
+    const hero = await upsertHero(payload);
+    return NextResponse.json({ message: "Hero updated", data: hero }, { status: 200 });
+  } catch (error) {
+    console.error("Error updating hero:", error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      }, { status: 400 });
+    }
+    
+    return NextResponse.json({ 
+      message: error.message || "Failed to update hero section" 
+    }, { status: 500 });
   }
-
-  const formData = await request.formData();
-  const avatarFile = formData.get("avatarFile");
-  const avatarFromForm = formData.get("avatar");
-  const avatarDataUrl = await toDataUrl(avatarFile, avatarFromForm);
-
-  const payload = heroSchema.parse({
-    avatar: avatarDataUrl ?? "",
-    fullName: formData.get("fullName") ?? "",
-    shortDescription: formData.get("shortDescription") ?? "",
-    longDescription: formData.get("longDescription") ?? "",
-  });
-
-  const hero = await upsertHero(payload);
-  return NextResponse.json({ message: "Hero updated", data: hero }, { status: 200 });
 });
 
 async function toDataUrl(file, fallbackString) {
   const fallback = typeof fallbackString === "string" ? fallbackString.trim() : "";
   if (file && typeof file.arrayBuffer === "function") {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const ext = path.extname(file.name || "") || ".bin";
-    const mime = extTypeMap[ext] ?? file.type ?? "application/octet-stream";
-    const tmp = path.join(os.tmpdir(), `${randomUUID()}${ext}`);
-    fs.writeFileSync(tmp, buffer);
     try {
-      const uri = await image2uri(tmp, { ext });
-      return uri.startsWith("data:") ? uri : `data:${mime};base64,${uri}`;
-    } finally {
-      fs.rmSync(tmp, { force: true });
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const ext = path.extname(file.name || "") || ".bin";
+      const mime = extTypeMap[ext] ?? file.type ?? "application/octet-stream";
+      const tmp = path.join(os.tmpdir(), `${randomUUID()}${ext}`);
+      
+      fs.writeFileSync(tmp, buffer);
+      try {
+        const uri = await image2uri(tmp, { ext });
+        return uri.startsWith("data:") ? uri : `data:${mime};base64,${uri}`;
+      } finally {
+        if (fs.existsSync(tmp)) {
+          fs.rmSync(tmp, { force: true });
+        }
+      }
+    } catch (error) {
+      console.error("Error processing image file:", error);
+      // Return fallback if file processing fails
+      return fallback;
     }
   }
   return fallback;

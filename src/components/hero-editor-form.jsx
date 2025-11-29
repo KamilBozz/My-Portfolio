@@ -121,8 +121,15 @@ export default function HeroEditorForm() {
         const response = await fetch("/api/hero", { method: "PUT", body: formData });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to update hero");
+          let errorMessage = "Failed to update hero";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (e) {
+            // If response is not JSON (e.g., HTML error page), use status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
 
         const { data } = await response.json();

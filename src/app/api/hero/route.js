@@ -7,6 +7,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
+import { headers, cookies } from "next/headers";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -33,8 +34,31 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
-    // Check authentication first (only reads headers/cookies, not body)
-    const session = await auth0.getSession(request);
+    // Check authentication using headers/cookies without touching the request body
+    const headersList = await headers();
+    const cookieStore = await cookies();
+    
+    // Create a request-like object with headers for auth check
+    const requestHeaders = new Headers();
+    headersList.forEach((value, key) => {
+      requestHeaders.set(key, value);
+    });
+    
+    // Add cookies to the request headers
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(cookie => `${cookie.name}=${cookie.value}`)
+      .join('; ');
+    
+    if (cookieHeader) {
+      requestHeaders.set('cookie', cookieHeader);
+    }
+    
+    const authRequest = new Request('http://localhost', {
+      headers: requestHeaders,
+    });
+    
+    const session = await auth0.getSession(authRequest);
     
     if (!session?.user) {
       return NextResponse.json({ 
@@ -42,7 +66,7 @@ export async function PUT(request) {
       }, { status: 401 });
     }
     
-    // Now read formData - this must happen after getSession
+    // Now read formData from the original request (body hasn't been consumed)
     const formData = await request.formData();
     const avatarFile = formData.get("avatarFile");
     const avatarFromForm = formData.get("avatar");

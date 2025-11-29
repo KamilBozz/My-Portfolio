@@ -31,10 +31,18 @@ export async function GET() {
   }
 }
 
-export const PUT = auth0.withApiAuthRequired(async (request) => {
+export async function PUT(request) {
   try {
-    // withApiAuthRequired already ensures authentication
-    // Read formData - getSession only reads headers/cookies, not body
+    // Check authentication first (only reads headers/cookies, not body)
+    const session = await auth0.getSession(request);
+    
+    if (!session?.user) {
+      return NextResponse.json({ 
+        message: "You must be logged in to edit the hero section" 
+      }, { status: 401 });
+    }
+    
+    // Now read formData - this must happen after getSession
     const formData = await request.formData();
     const avatarFile = formData.get("avatarFile");
     const avatarFromForm = formData.get("avatar");
@@ -70,7 +78,7 @@ export const PUT = auth0.withApiAuthRequired(async (request) => {
       message: error.message || "Failed to update hero section" 
     }, { status: 500 });
   }
-});
+}
 
 async function toDataUrl(file, fallbackString) {
   const fallback = typeof fallbackString === "string" ? fallbackString.trim() : "";

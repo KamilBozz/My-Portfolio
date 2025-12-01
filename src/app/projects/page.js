@@ -1,4 +1,4 @@
-import ProjectCard from "@/components/project-card"
+import ProjectSearchFilter from "@/components/project-search-filter"
 
 export default async function AllProjects() {
     const projects = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`)
@@ -9,10 +9,6 @@ export default async function AllProjects() {
         return [];
     })
     return (
-        <div className="flex flex-wrap justify-center gap-6 px-4 py-8">
-            {projects.map((project) => (
-                <ProjectCard key={project.title} project={project} />
-            ))}
-        </div>
+        <ProjectSearchFilter projects={projects} />
     )
 }

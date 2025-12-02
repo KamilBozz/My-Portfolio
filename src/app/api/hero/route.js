@@ -7,7 +7,6 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
-import { headers, cookies } from "next/headers";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -32,33 +31,9 @@ export async function GET() {
   }
 }
 
-export async function PUT(request) {
+export const PUT = auth0.withApiAuthRequired(async (request) => {
   try {
-    // Check authentication using headers/cookies without touching the request body
-    const headersList = await headers();
-    const cookieStore = await cookies();
-    
-    // Create a request-like object with headers for auth check
-    const requestHeaders = new Headers();
-    headersList.forEach((value, key) => {
-      requestHeaders.set(key, value);
-    });
-    
-    // Add cookies to the request headers
-    const cookieHeader = cookieStore
-      .getAll()
-      .map(cookie => `${cookie.name}=${cookie.value}`)
-      .join('; ');
-    
-    if (cookieHeader) {
-      requestHeaders.set('cookie', cookieHeader);
-    }
-    
-    const authRequest = new Request('http://localhost', {
-      headers: requestHeaders,
-    });
-    
-    const session = await auth0.getSession(authRequest);
+    const session = await auth0.getSession(request);
     
     if (!session?.user) {
       return NextResponse.json({ 
@@ -66,7 +41,7 @@ export async function PUT(request) {
       }, { status: 401 });
     }
     
-    // Now read formData from the original request (body hasn't been consumed)
+    // Read formData from the request (body is safe to read now)
     const formData = await request.formData();
     const avatarFile = formData.get("avatarFile");
     const avatarFromForm = formData.get("avatar");
@@ -102,7 +77,7 @@ export async function PUT(request) {
       message: error.message || "Failed to update hero section" 
     }, { status: 500 });
   }
-}
+});
 
 async function toDataUrl(file, fallbackString) {
   const fallback = typeof fallbackString === "string" ? fallbackString.trim() : "";

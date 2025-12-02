@@ -7,6 +7,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
+import { cookies, headers } from "next/headers";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,9 +32,36 @@ export async function GET() {
   }
 }
 
-export const PUT = auth0.withApiAuthRequired(async (request) => {
+export async function PUT(request) {
   try {
-    const session = await auth0.getSession(request);
+    // Read formData FIRST before any authentication checks that might consume the body
+    const formData = await request.formData();
+    
+    // Now check authentication using cookies/headers (doesn't consume body)
+    const headersList = await headers();
+    const cookieStore = await cookies();
+    
+    // Create a request-like object with headers for auth check
+    const requestHeaders = new Headers();
+    headersList.forEach((value, key) => {
+      requestHeaders.set(key, value);
+    });
+    
+    // Add cookies to the request headers
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(cookie => `${cookie.name}=${cookie.value}`)
+      .join('; ');
+    
+    if (cookieHeader) {
+      requestHeaders.set('cookie', cookieHeader);
+    }
+    
+    const authRequest = new Request('http://localhost', {
+      headers: requestHeaders,
+    });
+    
+    const session = await auth0.getSession(authRequest);
     
     if (!session?.user) {
       return NextResponse.json({ 
@@ -41,8 +69,7 @@ export const PUT = auth0.withApiAuthRequired(async (request) => {
       }, { status: 401 });
     }
     
-    // Read formData from the request (body is safe to read now)
-    const formData = await request.formData();
+    // Process the form data
     const avatarFile = formData.get("avatarFile");
     const avatarFromForm = formData.get("avatar");
     const avatarDataUrl = await toDataUrl(avatarFile, avatarFromForm);
@@ -77,7 +104,7 @@ export const PUT = auth0.withApiAuthRequired(async (request) => {
       message: error.message || "Failed to update hero section" 
     }, { status: 500 });
   }
-});
+}
 
 async function toDataUrl(file, fallbackString) {
   const fallback = typeof fallbackString === "string" ? fallbackString.trim() : "";
